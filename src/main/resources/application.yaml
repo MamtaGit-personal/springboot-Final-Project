@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    password: restaurant
+    username: restaurant
+    url: jdbc:mysql://localhost:3306/restaurant
+       
+logging:
+  level:
+    root: warn
+    '[com.mamta]': debug
