@@ -35,7 +35,7 @@ CREATE TABLE orders(
     id int(11) not null auto_increment,
     rest_id int(11) not null,
     customer_id int(11) not null,   -- list of dish Ids
-    phone varchar(16) not null unique,
+    phone varchar(16) not null,
     date Date,
 	pickupOrDeliveryTime varchar(16),
     orderType varchar(20) not null default 'Pickup',  -- Pickup or Delivery

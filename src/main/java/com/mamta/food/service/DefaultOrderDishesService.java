@@ -1,5 +1,7 @@
 package com.mamta.food.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +16,6 @@ import com.mamta.food.entity.Dish;
 import com.mamta.food.entity.Order;
 import com.mamta.food.entity.OrderRequest;
 import com.mamta.food.entity.OrderRequestWithIdAndTotalAmountDue;
-import com.mamta.food.entity.OrderType;
 import com.mamta.food.entity.Restaurant;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,8 +47,21 @@ public class DefaultOrderDishesService implements OrderDishesService{
     
     System.out.println("Service layer, orderRequestWithIdAndTotalAmountDue: " + orderRequestWithIdAndTotalAmountDue);
     
-    return orderDishesDao.saveCustomerOrder(orderRequestWithIdAndTotalAmountDue);
+    LocalDateTime now = LocalDateTime.now();  
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
+    String date = dtf.format(now);
+    
+    dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+    String pickupOrDeliveryTime = dtf.format(now);
+    
+    Order order = orderDishesDao.saveCustomerOrder(orderRequestWithIdAndTotalAmountDue, date, pickupOrDeliveryTime);
+    
+    return order;
   }
+  
+  /////////////////////////////////////////////////////////////////////////////////////////
+  //saveDishOrderWithQuantity( dishes, orderPK);
+  
   
   /////////////////////////////////////////////////////////////////////////////////////////
   private OrderRequestWithIdAndTotalAmountDue getOrderRequestWithIdAndTotalAmountDue(Customer customer,
@@ -101,7 +115,7 @@ public class DefaultOrderDishesService implements OrderDishesService{
   }
  
   //////////////////////////////////////////////////////////////////////////
-  private List<Dish> fetchDishListWithPriceDetails(OrderRequest orderRequest, String restaurant) {
+  protected List<Dish> fetchDishListWithPriceDetails(OrderRequest orderRequest, String restaurant) {
     return orderDishesDao.getDishListWithPriceDetails(orderRequest, restaurant);
   }
 
@@ -120,5 +134,5 @@ public class DefaultOrderDishesService implements OrderDishesService{
         .orElseThrow(() -> new NoSuchElementException("Customer with ID = " 
         + orderRequest.getCustomerPhone()+ " was NOT found"));
   }
-  
+    
 }

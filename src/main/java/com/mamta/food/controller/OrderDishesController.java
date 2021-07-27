@@ -63,8 +63,6 @@ public interface OrderDishesController {
    
   @PostMapping
   @ResponseStatus(code = HttpStatus.CREATED)
-  //Order createOrder(@RequestBody OrderRequest orderRequest);
   Order createOrder(@Valid @RequestBody OrderRequest orderRequest);
   //@formatter:on
-
-}
+ }

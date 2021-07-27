@@ -1,6 +1,7 @@
 package com.mamta.food.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import com.mamta.food.entity.Customer;
 import com.mamta.food.entity.Dish;
@@ -17,6 +18,8 @@ public interface OrderDishesDao {
 
   List<Dish> getDishListWithPriceDetails(OrderRequest orderRequest, String restaurant);
   
-  Order saveCustomerOrder(OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue);
-  
+  Order saveCustomerOrder(OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue, 
+      String date, String pickupOrDeliveryTime);
+ 
+  //void saveDishOrderWithQuantity( Map<Long, Integer> dishes, Long orderPK);
 }

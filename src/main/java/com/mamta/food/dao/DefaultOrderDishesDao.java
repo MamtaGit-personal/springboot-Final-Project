@@ -38,21 +38,9 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
   
   /////////////////////////////////////////////////////////////////////////////
   @Override
-  public Order saveCustomerOrder(OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue) {
-    
-    LocalDateTime now = LocalDateTime.now();  
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
-    String date = dtf.format(now);
-    
-    dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-    String pickupOrDeliveryTime = dtf.format(now);
-    
-    //////////////////////////////////////////////////////////
-    System.out.println("Service layer: Restaurant is:" + orderRequestWithIdAndTotalAmountDue.getRestaurant());
-    System.out.println("Service layer: Total Dish Map is:" + orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity());
-  
-    //////////////////////////////////////////////////////////
-    
+  public Order saveCustomerOrder(OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue, 
+      String date, String pickupOrDeliveryTime) {
+   
     SqlParams params = generateInsertSql(orderRequestWithIdAndTotalAmountDue.getCustomer(), 
         orderRequestWithIdAndTotalAmountDue.getRestaurant(), 
         orderRequestWithIdAndTotalAmountDue.getOrderType(), 
@@ -114,7 +102,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     params.source.addValue("phone", customer.getPhone());
     params.source.addValue("date", date);
     params.source.addValue("pickupOrDeliveryTime", time);
-    params.source.addValue("orderType", orderType);
+    params.source.addValue("orderType", orderType.toString());
     params.source.addValue("amountDue", totalAmountDue);
     
     return params;
