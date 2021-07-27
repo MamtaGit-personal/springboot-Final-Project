@@ -7,8 +7,8 @@ import com.mamta.food.entity.OrderRequest;
 import com.mamta.food.service.OrderDishesService;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
+@Slf4j
 public class BasicOrderDishesController implements OrderDishesController {
   
   @Autowired

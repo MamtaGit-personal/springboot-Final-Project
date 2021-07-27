@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 @Builder
 public class Dish {
+  private Long dishId;
   private Long restId;
   private String restaurant;
-  private Long dishId;
   private String dishName; 
   private double price; 
   private DishType dishType;  //veg or non-veg

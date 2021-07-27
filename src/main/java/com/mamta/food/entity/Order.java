@@ -1,9 +1,6 @@
 package com.mamta.food.entity;
 
-import java.sql.Date;
-import java.sql.Time;
-//import java.util.Date;
-import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,7 +14,7 @@ public class Order {
   OrderType orderType;
   private String date;
   private String pickupOrDeliveryTime;
-  private List<OrderedDishesQuantity> dishAndQuantity;
+  private Map<String, Integer> dishNameAndQuantity;
   private double totalAmountDue;
   
 }

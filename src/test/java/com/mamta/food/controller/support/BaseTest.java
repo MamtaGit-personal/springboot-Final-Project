@@ -17,4 +17,7 @@ public class BaseTest {
     return String.format("http://localhost:%d/dishes", serverPort);
   }
   
+  protected String getBaseUriForOrders() {
+    return String.format("http://localhost:%d/dishes", serverPort);
+  }
 }

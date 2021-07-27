@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -19,12 +20,12 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import com.mamta.food.entity.Customer;
-import com.mamta.food.entity.CustomerOrderList;
 import com.mamta.food.entity.Dish;
 import com.mamta.food.entity.DishType;
 import com.mamta.food.entity.Order;
 import com.mamta.food.entity.OrderRequest;
-import com.mamta.food.entity.OrderedDishesIDsAndQuantity;
+import com.mamta.food.entity.OrderRequestWithIdAndTotalAmountDue;
+import com.mamta.food.entity.OrderType;
 import com.mamta.food.entity.Restaurant;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,8 +38,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
   
   /////////////////////////////////////////////////////////////////////////////
   @Override
-  public Order saveCustomerOrder(CustomerOrderList customerOrderList, Customer customer,
-  Restaurant restaurant, List<Dish> dish, List<OrderedDishesIDsAndQuantity> orderedDishesIDsAndQuantity) {
+  public Order saveCustomerOrder(OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue) {
     
     LocalDateTime now = LocalDateTime.now();  
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
@@ -47,26 +47,28 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     dtf = DateTimeFormatter.ofPattern("HH:mm");
     String pickupOrDeliveryTime = dtf.format(now);
     
-    SqlParams params = generateInsertSql(customer, restaurant, customerOrderList, 
-        date, pickupOrDeliveryTime);
+    SqlParams params = generateInsertSql(orderRequestWithIdAndTotalAmountDue.getCustomer(), 
+        orderRequestWithIdAndTotalAmountDue.getRestaurant(), 
+        orderRequestWithIdAndTotalAmountDue.getOrderType(), 
+        date, pickupOrDeliveryTime, orderRequestWithIdAndTotalAmountDue.getTotalAmoutDue());
     
     KeyHolder keyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(params.sql, params.source, keyHolder);  
     
     Long orderPK = keyHolder.getKey().longValue();
     
-    saveDishOrderWithQuantity(orderedDishesIDsAndQuantity, orderPK);
+    saveDishOrderWithQuantity(orderRequestWithIdAndTotalAmountDue.getDishIdAndQuantity(), orderPK);
     
     // @formatter:off
     return Order.builder()
-        .restId(restaurant.getRestId())
-        .restaurantName(restaurant.getName())
-        .customerName(customer.getName())
-        .customerPhone(customer.getPhone())
-        .orderType(customerOrderList.getOrderType())
+        .restId(orderRequestWithIdAndTotalAmountDue.getRestaurant().getRestId())
+        .restaurantName(orderRequestWithIdAndTotalAmountDue.getRestaurant().getName())
+        .customerName(orderRequestWithIdAndTotalAmountDue.getCustomer().getName())
+        .customerPhone(orderRequestWithIdAndTotalAmountDue.getCustomer().getPhone())
+        .orderType(orderRequestWithIdAndTotalAmountDue.getOrderType())
         .date(date)
         .pickupOrDeliveryTime(pickupOrDeliveryTime)
-        .dishAndQuantity(customerOrderList.getDishAndQuantity())
+        .dishNameAndQuantity(orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity())
         .build();
     // @formatter:on
   }
@@ -80,7 +82,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
   * orderType in the orders table is orderType in the customerOrderList table 
   */
   private SqlParams generateInsertSql(Customer customer, Restaurant restaurant,
-      CustomerOrderList customerOrderList, String date, String time) {
+      OrderType orderType, String date, String time, double totalAmountDue) {
     SqlParams params = new SqlParams();
     // @formatter:off
     String sql = ""
@@ -97,23 +99,23 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     params.source.addValue("phone", customer.getPhone());
     params.source.addValue("date", date);
     params.source.addValue("pickupOrDeliveryTime", time);
-    params.source.addValue("orderType", customerOrderList.getOrderType());
-    params.source.addValue("amountDue", customerOrderList.getTotalAmountDue());
+    params.source.addValue("orderType", orderType);
+    params.source.addValue("amountDue", totalAmountDue);
     
     return params;
   }
   
   ////////////////////////////////////////////////////////////////////////////
-  private void saveDishOrderWithQuantity( List<OrderedDishesIDsAndQuantity> dishes, Long orderPK) {
+  private void saveDishOrderWithQuantity( Map<Long, Integer> dishes, Long orderPK) {
     
-      for(OrderedDishesIDsAndQuantity dish: dishes) { 
+    Set<Long> dishIds = dishes.keySet();  
+    for(Long dishId: dishIds) { 
         SqlParams params =
-        generateDishOrderWithQuantityInsertSql(dish.getDishId(), dish.getQuantity(), orderPK);
+        generateDishOrderWithQuantityInsertSql(dishId, dishes.get(dishId), orderPK);
         jdbcTemplate.update(params.sql, params.source);
       
       }
-     
-  
+
   }
   
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -137,38 +139,61 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
 
   //////////////////////////////////////////////////////////////////////////
   @Override
-  public List<Dish> getDishListWithPriceDetails(OrderRequest orderRequest) {
+  public List<Dish> getDishListWithPriceDetails(OrderRequest orderRequest, String restaurant) {
+    
     Map <String, Object> params = new HashMap<>();
-    if(orderRequest.getDishAndQuantity().size() == 0) {
+    int i = 0;
+    
+    Set<String> dishNames = orderRequest.getDishNameAndQuantity().keySet();
+    for(String dishName: dishNames) {
+      System.out.println("dishName is: " + dishName 
+          + ", quantity is: " + orderRequest.getDishNameAndQuantity().get(dishName)
+          + ", counter is: " + i);
+      i++;
+    }
+    
+    if(orderRequest.getDishNameAndQuantity().size() == 0) {
       return new LinkedList<>();
     }
     log.debug("DAO layer, getRestaurant Id = {}", orderRequest.getRestId());
+    log.debug("DAO layer, Order size is = {}", orderRequest.getDishNameAndQuantity().size());
+    
     
     // @formatter:off
     String sql = ""
         + "SELECT * "
         + "FROM dishes "
-        + "WHERE dishName IN (";  
+        + "WHERE rest_id = :restaurant_id "
+        + "AND dishName IN (";  
  
-    for(int index = 0; index < orderRequest.getDishAndQuantity().size(); index ++) {
-      String key = "dish_" + index;
+    //for(int index = 0; index < orderRequest.getDishNameAndQuantity().size(); index ++) {
+    i = 0;
+    for(String dishName: dishNames) {
+      String key = "dish_" + i;
       sql += ":" + key + ", ";
-      params.put(key, orderRequest.getDishAndQuantity().get(index).getDishName());
-      
+      params.put(key, orderRequest.getDishNameAndQuantity().get(dishName)); 
+      log.debug("DAO layer, dishName = {}, quantity = {}", dishName, orderRequest.getDishNameAndQuantity().get(dishName));
+      ////// NEED to work here: orderRequest.getDishNameAndQuantity().get(key). July 24, 2021.
+      i++;
     }
-    System.out.println("SQL string is: " + sql);
+    
     sql = sql.substring(0, sql.length() - 2);
-    sql += ") "
-        + "AND rest_id = :restaurant_id";
+    sql += ") ";
     params.put("restaurant_id", orderRequest.getRestId());
     
+    log.debug("DAO - SQL string is: " + sql);
+     
     return jdbcTemplate.query(sql, params, new RowMapper<>() {
       @Override
       public Dish mapRow(ResultSet rs, int rowNum) throws SQLException {
         
+        log.debug("DAO in RowMapper(), DishName is: " + rs.getString("dishName"));
+        log.debug("DAO in RowMapper(), restaurant ID is: " + rs.getLong("rest_id"));
+             
         return Dish.builder()
         .dishId(rs.getLong("id"))
         .restId(rs.getLong("rest_id"))
+        .restaurant(restaurant)
         .dishName(rs.getString("dishName"))
         .price(rs.getDouble("price"))
         .dishType(DishType.valueOf(rs.getString("typeOfDish")))
