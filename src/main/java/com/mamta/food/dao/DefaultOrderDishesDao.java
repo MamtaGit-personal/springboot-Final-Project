@@ -44,8 +44,14 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");  
     String date = dtf.format(now);
     
-    dtf = DateTimeFormatter.ofPattern("HH:mm");
+    dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
     String pickupOrDeliveryTime = dtf.format(now);
+    
+    //////////////////////////////////////////////////////////
+    System.out.println("Service layer: Restaurant is:" + orderRequestWithIdAndTotalAmountDue.getRestaurant());
+    System.out.println("Service layer: Total Dish Map is:" + orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity());
+  
+    //////////////////////////////////////////////////////////
     
     SqlParams params = generateInsertSql(orderRequestWithIdAndTotalAmountDue.getCustomer(), 
         orderRequestWithIdAndTotalAmountDue.getRestaurant(), 
@@ -56,6 +62,15 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     jdbcTemplate.update(params.sql, params.source, keyHolder);  
     
     Long orderPK = keyHolder.getKey().longValue();
+    
+    Map<String, Integer> myDishNameAndQuantity = new HashMap<>();
+    
+    Set<String> dishNames = orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity().keySet();
+    for(String dishName: dishNames) {
+      myDishNameAndQuantity.put(dishName, orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity().get(dishName));
+      System.out.println("Service layer: Individual dish Map is:" + myDishNameAndQuantity);
+      System.out.println("Service layer: Total Dish Map is:" + orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity());
+    }
     
     saveDishOrderWithQuantity(orderRequestWithIdAndTotalAmountDue.getDishIdAndQuantity(), orderPK);
     
@@ -93,7 +108,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
         + ")";
     // @formatter:on    
     params.sql = sql;
-    
+    System.out.println("Insert statement: " + params.sql);
     params.source.addValue("rest_id", restaurant.getRestId());
     params.source.addValue("customer_id", customer.getCustomerId());
     params.source.addValue("phone", customer.getPhone());
@@ -111,7 +126,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     Set<Long> dishIds = dishes.keySet();  
     for(Long dishId: dishIds) { 
         SqlParams params =
-        generateDishOrderWithQuantityInsertSql(dishId, dishes.get(dishId), orderPK);
+            generateInsertSql(dishId, dishes.get(dishId), orderPK);
         jdbcTemplate.update(params.sql, params.source);
       
       }
@@ -119,7 +134,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
   }
   
   //////////////////////////////////////////////////////////////////////////////////////////
-  private SqlParams generateDishOrderWithQuantityInsertSql(Long dishId, int quantity, Long orderId) {
+  private SqlParams generateInsertSql(Long dishId, int quantity, Long orderId) {
     SqlParams params = new SqlParams();
     // @formatter:off
     params.sql = ""
@@ -134,6 +149,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     params.source.addValue("dish_id", dishId);
     params.source.addValue("quantity", quantity);
     
+    System.out.println("Insert statement: " + params.sql);
     return params;
   }
 
@@ -171,7 +187,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
     for(String dishName: dishNames) {
       String key = "dish_" + i;
       sql += ":" + key + ", ";
-      params.put(key, orderRequest.getDishNameAndQuantity().get(dishName)); 
+      params.put(key, dishName); 
       log.debug("DAO layer, dishName = {}, quantity = {}", dishName, orderRequest.getDishNameAndQuantity().get(dishName));
       ////// NEED to work here: orderRequest.getDishNameAndQuantity().get(key). July 24, 2021.
       i++;
@@ -188,8 +204,8 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
       public Dish mapRow(ResultSet rs, int rowNum) throws SQLException {
         
         log.debug("DAO in RowMapper(), DishName is: " + rs.getString("dishName"));
-        log.debug("DAO in RowMapper(), restaurant ID is: " + rs.getLong("rest_id"));
-             
+        log.debug("DAO in RowMapper(),  restaurant ID is: " + rs.getLong("rest_id"));
+            
         return Dish.builder()
         .dishId(rs.getLong("id"))
         .restId(rs.getLong("rest_id"))

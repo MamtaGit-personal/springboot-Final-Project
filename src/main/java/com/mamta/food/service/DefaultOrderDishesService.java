@@ -1,6 +1,8 @@
 package com.mamta.food.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import com.mamta.food.entity.Dish;
 import com.mamta.food.entity.Order;
 import com.mamta.food.entity.OrderRequest;
 import com.mamta.food.entity.OrderRequestWithIdAndTotalAmountDue;
+import com.mamta.food.entity.OrderType;
 import com.mamta.food.entity.Restaurant;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +25,7 @@ public class DefaultOrderDishesService implements OrderDishesService{
   @Autowired
   private OrderDishesDao orderDishesDao;
   
-  private double totalAmount = 0.0;
+  private double totalAmount;
   
   @Transactional
   @Override
@@ -35,11 +38,14 @@ public class DefaultOrderDishesService implements OrderDishesService{
     
     System.out.println("Service layer, Customer Name is: " + customer.getName());
     System.out.println("Service layer, restaurant Name is: " + restaurant.getName());
-    System.out.println("Service layer, dishes ordered are: " + dish.get(0));
+    System.out.println("Service layer, dishes ordered are: " + dish);
     
+    totalAmount = 0.0;
     OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue = 
         getOrderRequestWithIdAndTotalAmountDue(customer, restaurant, dish, orderRequest);
-         
+    
+    System.out.println("Service layer, orderRequestWithIdAndTotalAmountDue: " + orderRequestWithIdAndTotalAmountDue);
+    
     return orderDishesDao.saveCustomerOrder(orderRequestWithIdAndTotalAmountDue);
   }
   
@@ -47,32 +53,51 @@ public class DefaultOrderDishesService implements OrderDishesService{
   private OrderRequestWithIdAndTotalAmountDue getOrderRequestWithIdAndTotalAmountDue(Customer customer,
       Restaurant restaurant, List<Dish> dish, OrderRequest orderRequest) {
     
-    OrderRequestWithIdAndTotalAmountDue orderRequestWithIdAndTotalAmountDue = 
-        new OrderRequestWithIdAndTotalAmountDue(customer, restaurant, orderRequest.getDishNameAndQuantity());
-     
-    double price;
-    int quantity = 0; 
-    orderRequestWithIdAndTotalAmountDue.setOrderType(orderRequest.getOrderType());
+    double [] price = new double[dish.size()];;
+    int quantity = 0;
+    String tempDishName = "";
+    int counter = 0;
+    Map<String, Integer> myDishNameAndQuantity = new HashMap<>();
     
     Set<String> dishNames = orderRequest.getDishNameAndQuantity().keySet();
-    
-    for(int index =0; index < dish.size(); index++) {
-     for(String dishName: dishNames) {
-        if(dishName == dish.get(index).getDishName()) {
-          orderRequestWithIdAndTotalAmountDue.getDishIdAndQuantity()
-          .put(dish.get(index).getDishId(), orderRequest.getDishNameAndQuantity().get(dishName));
-          
-          quantity = orderRequest.getDishNameAndQuantity().get(dishName);
-          price = dish.get(index).getPrice();
-          price = price*quantity;
-          
-          totalAmount = totalAmount + price;
-          orderRequestWithIdAndTotalAmountDue.setTotalAmoutDue(totalAmount);
-        }
-      }
+    for(String dishName: dishNames) {
+      myDishNameAndQuantity.put(dishName, orderRequest.getDishNameAndQuantity().get(dishName));
+      System.out.println("Service layer: Dish Map is:" + myDishNameAndQuantity);
     }
     
-    return orderRequestWithIdAndTotalAmountDue;
+    Map<Long, Integer> myDishIdAndQuantity = new HashMap<>();
+    
+    for(String dishName: dishNames) {
+     
+      for(int index =0; index < dish.size(); index++) {
+        tempDishName = dish.get(index).getDishName();
+        System.out.println(" Service layer, dish.size() is: " + dish.size());
+        System.out.println(" Service layer, dish.get(index).getDishName(): " + tempDishName);
+       
+        if(dishName.equals(tempDishName)) {
+          myDishIdAndQuantity.put(dish.get(index).getDishId(), orderRequest.getDishNameAndQuantity().get(dishName));
+          quantity = orderRequest.getDishNameAndQuantity().get(dishName);
+          price[counter] = dish.get(index).getPrice(); ///Failing here...
+          price[counter] = price[counter]*quantity;
+          break;
+        }
+      }
+      counter++;
+   }
+    
+   for(int i = 0; i < price.length; i++) {
+   totalAmount = totalAmount + price[i];
+   } 
+     
+   return OrderRequestWithIdAndTotalAmountDue.builder()
+       .customer(customer)
+       .restaurant(restaurant)
+       .orderType(orderRequest.getOrderType())
+       .totalAmoutDue(totalAmount)
+       .dishIdAndQuantity(myDishIdAndQuantity)
+       .dishNameAndQuantity(myDishNameAndQuantity)
+       .build();
+   
   }
  
   //////////////////////////////////////////////////////////////////////////
