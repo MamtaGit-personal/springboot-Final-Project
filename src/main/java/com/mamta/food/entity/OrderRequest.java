@@ -1,7 +1,6 @@
 package com.mamta.food.entity;
 
 import java.util.Map;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Positive;
@@ -26,20 +25,5 @@ public class OrderRequest {
   
   private Map<@NotNull @Length(max=30) @Pattern(regexp = "[\\w\\s]*") String,
     @Positive Integer> dishNameAndQuantity;
- 
-  /*
-   * public OrderRequest() {};
-   * 
-   * public OrderRequest(Long restId, OrderType orderType, String customerPhone, Map<String,
-   * Integer> dishNameAndQuantity) { this.restId = restId; this.customerPhone = customerPhone;
-   * this.orderType = orderType; Set<String> dishNames = dishNameAndQuantity.keySet(); for(String
-   * dishName: dishNames) { this.dishNameAndQuantity.put(dishName,
-   * dishNameAndQuantity.get(dishName)); } };
-   * 
-   * public OrderRequest(Map<String, Integer> dishNameAndQuantity) { Set<String> dishNames =
-   * dishNameAndQuantity.keySet(); for(String dishName: dishNames) {
-   * this.dishNameAndQuantity.put(dishName, dishNameAndQuantity.get(dishName)); } };
-   */
-  //private Map<String, Integer> dishNameAndQuantity; 
-    
+  
 }

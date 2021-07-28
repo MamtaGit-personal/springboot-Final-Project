@@ -1,5 +1,7 @@
 package com.mamta.food.controller;
 
+import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -25,7 +27,7 @@ public interface UpdateDishController {
       responses = {
           @ApiResponse(
               responseCode = "200",
-              description = "Dish with new dish name is returned",
+              description = "Dish with new dish price is returned",
               content = @Content(
                   mediaType = "application/json",
                   schema = @Schema(implementation = UpdateDish.class))),
@@ -47,17 +49,17 @@ public interface UpdateDishController {
           parameters = {
               @Parameter(
                   name = "dishId", 
-                  required = false, 
-                  description = "The restaurant ID"),
+                  required = true, 
+                  description = "The dish ID"),
               @Parameter(
                   name = "newPrice", 
-                  required = false, 
-                  description = "The new dish name")
+                  required = true, 
+                  description = "The new dish price")
            }
      
   )
   
   @RequestMapping(value = "/dishes/{dishId},{newPrice}", method = RequestMethod.PUT)  // To tell spring
-  UpdateDish updateDishName(@PathVariable Long dishId, @PathVariable double newPrice);
+  UpdateDish updateDishName(@Valid @Positive @PathVariable Long dishId, @Valid @Positive @PathVariable double newPrice);
 
 }

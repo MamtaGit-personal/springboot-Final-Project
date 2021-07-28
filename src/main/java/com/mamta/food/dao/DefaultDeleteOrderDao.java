@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
@@ -88,7 +89,9 @@ public class DefaultDeleteOrderDao implements DeleteOrderDao {
     if(numOfRows == 1) {
       deleteSuccess = true;
     }
-    else deleteSuccess = false;
+    else {
+      deleteSuccess = false;
+    }
   
     return deleteSuccess;
   }

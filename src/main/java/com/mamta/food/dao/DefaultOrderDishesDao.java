@@ -72,6 +72,7 @@ public class DefaultOrderDishesDao implements OrderDishesDao {
         .date(date)
         .pickupOrDeliveryTime(pickupOrDeliveryTime)
         .dishNameAndQuantity(orderRequestWithIdAndTotalAmountDue.getDishNameAndQuantity())
+        .totalAmountDue(orderRequestWithIdAndTotalAmountDue.getTotalAmoutDue())
         .build();
     // @formatter:on
   }

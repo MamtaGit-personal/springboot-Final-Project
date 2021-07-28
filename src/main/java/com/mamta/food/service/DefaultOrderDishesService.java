@@ -59,10 +59,7 @@ public class DefaultOrderDishesService implements OrderDishesService{
     return order;
   }
   
-  /////////////////////////////////////////////////////////////////////////////////////////
-  //saveDishOrderWithQuantity( dishes, orderPK);
-  
-  
+ 
   /////////////////////////////////////////////////////////////////////////////////////////
   private OrderRequestWithIdAndTotalAmountDue getOrderRequestWithIdAndTotalAmountDue(Customer customer,
       Restaurant restaurant, List<Dish> dish, OrderRequest orderRequest) {
